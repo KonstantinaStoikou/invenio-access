@@ -14,29 +14,27 @@ language: python
 matrix:
   fast_finish: true
   allow_failures:
-    - env: REQUIREMENTS=devel EXTRAS=all,sqlite SQLALCHEMY_DATABASE_URI="sqlite:///test.db"
-    - env: REQUIREMENTS=devel EXTRAS=all,mysql SQLALCHEMY_DATABASE_URI="mysql+pymysql://root@localhost:3306/invenio"
-    - env: REQUIREMENTS=devel EXTRAS=all,postgresql SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres@localhost:5432/invenio"
+    - env: REQUIREMENTS=devel EXTRAS=all,sqlite
+    - env: REQUIREMENTS=devel DB=mysql EXTRAS=all,mysql
+    - env: REQUIREMENTS=devel DB=psql EXTRAS=all,postgresql
     - python: 3.8
 
 cache:
   - pip
 
 services:
-  - mysql
-  - postgresql
-  - redis-server
+  - docker
 
 env:
-  - REQUIREMENTS=lowest EXTRAS=all,sqlite SQLALCHEMY_DATABASE_URI="sqlite:///test.db"
-  - REQUIREMENTS=lowest EXTRAS=all,mysql SQLALCHEMY_DATABASE_URI="mysql+pymysql://root@localhost:3306/invenio"
-  - REQUIREMENTS=lowest EXTRAS=all,postgresql SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres@localhost:5432/invenio"
-  - REQUIREMENTS=release EXTRAS=all,sqlite SQLALCHEMY_DATABASE_URI="sqlite:///test.db"
-  - REQUIREMENTS=release EXTRAS=all,mysql SQLALCHEMY_DATABASE_URI="mysql+pymysql://root@localhost:3306/invenio"
-  - REQUIREMENTS=release EXTRAS=all,postgresql SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres@localhost:5432/invenio" DEPLOY=true
-  - REQUIREMENTS=devel EXTRAS=all,sqlite SQLALCHEMY_DATABASE_URI="sqlite:///test.db"
-  - REQUIREMENTS=devel EXTRAS=all,mysql SQLALCHEMY_DATABASE_URI="mysql+pymysql://root@localhost:3306/invenio"
-  - REQUIREMENTS=devel EXTRAS=all,postgresql SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres@localhost:5432/invenio"
+  global:
+    - DOCKER_COMPOSE_VERSION=1.26.2
+  matrix:
+    - REQUIREMENTS=lowest EXTRAS=all,sqlite
+    - REQUIREMENTS=lowest DB=mysql EXTRAS=all,mysql
+    - REQUIREMENTS=lowest DB=psql EXTRAS=all,postgresql
+    - REQUIREMENTS=release EXTRAS=all,sqlite
+    - REQUIREMENTS=release DB=mysql EXTRAS=all,mysql
+    - REQUIREMENTS=release DB=psql EXTRAS=all,postgresql DEPLOY=true
 
 python:
   - "3.6"
@@ -44,16 +42,18 @@ python:
   - "3.8"
 
 before_install:
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
   - "pip uninstall -y six"
   - "travis_retry pip install --upgrade pip setuptools py"
   - "travis_retry pip install twine wheel coveralls requirements-builder"
   - "requirements-builder --level=min setup.py > .travis-lowest-requirements.txt"
   - "requirements-builder --level=pypi setup.py > .travis-release-requirements.txt"
   - "requirements-builder --level=dev --req requirements-devel.txt setup.py > .travis-devel-requirements.txt"
-  - "mysql -e 'CREATE DATABASE IF NOT EXISTS invenio;'"
-  - "mysql -e 'GRANT ALL ON invenio.* TO 'root'@'localhost';' -uroot;"
-  - "psql -c 'CREATE DATABASE invenio;' -U postgres"
-
+  - "docker --version"
+  - "docker-compose --version"
 install:
   - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
   - "travis_retry pip install -e .[${EXTRAS}]"

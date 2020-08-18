@@ -1,0 +1,21 @@
+# # -*- coding: utf-8 -*-
+# #
+# # Copyright (C) 2020 CERN.
+# #
+# # Invenio Services is free software; you can redistribute it and/or modify it
+# # under the terms of the MIT License; see LICENSE file for more details.
+
+version: "2.3"
+services:
+  es:
+    extends:
+      file: docker-services.yml
+      service: es
+  db:
+    extends:
+      file: docker-services.yml
+      service: ${DB}
+  redis:
+    extends:
+      file: docker-services.yml
+      service: redis

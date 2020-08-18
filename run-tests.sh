@@ -7,10 +7,20 @@
 # Invenio is free software; you can redistribute it and/or modify it
 # under the terms of the MIT License; see LICENSE file for more details.
 
-export PYTEST_ADDOPTS='docs tests invenio_access'
+# Export variables for docker-compose 
+# export ...
+
+docker-compose --env-file=./.env up -d
+
 
 pydocstyle invenio_access tests docs && \
-isort -rc -c -df && \
+isort . -rc -c -df && \
 check-manifest --ignore ".travis-*" && \
 sphinx-build -qnNW docs docs/_build/html && \
 python setup.py test
+# pytest
+
+docker-compose down
+
+# Clear exported docker-compose variables
+# unset ...
